@@ -24,8 +24,8 @@ This project implements a bilevel optimization model for strategic storage biddi
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/zhenhuaplus/bilevel-storage.git
-   cd bilevel-storage
+   git clone https://github.com/Power-Lab/EnergyEcon_Storage_2026.git
+   cd EnergyEcon_Storage_2026
    ```
 
 2. Install Julia dependencies:
