@@ -65,14 +65,16 @@ The run name format is: `b{storage_gw}_hrs{duration}_w{wind_scale}_s{solar_scale
 
 ### Custom Parameters
 
-Modify parameters in `code/run_all_tscc.jl` or `code/run_all_pc.jl`:
+Modify key parameters in `code/run_all_tscc.jl` for HPC runs or `code/run_all_pc.jl` for local runs:
 
 - `storage_cap_gw`: Storage capacity in GW
 - `storage_duration`: Storage duration in hours
+- `one_way_efficiency`: Storage one-way efficiency
 - `wind_cap_scale`: Wind capacity multiplier
 - `solar_cap_scale`: Solar capacity multiplier
-- `ra_scenario`: Resource adequacy constraint ("baseline", "min_soc", "penalty")
 - `ramping_charge_scenario`: Ramping charge cost scenario
+- `ramping_charge`: Storage ramping charge cost
+- `bidding_ptc`: Renewable production tax incentive in $/MW
 
 ## Project Structure
 
