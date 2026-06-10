@@ -29,6 +29,10 @@ ra_scenario = ["baseline", "min_soc", "penalty"][1]
 ra_penalty_cost = 20
 ra_min_soc = 0.25;
 
+# Set ramping charge parameters
+ramping_charge_scenario = false
+ramping_charge = 1.0 # $/MWh
+
 # Set VRE/firm parameters
 wind_cap_scale = 8
 solar_cap_scale = 4

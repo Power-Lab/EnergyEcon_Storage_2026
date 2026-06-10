@@ -42,8 +42,8 @@ This project implements a bilevel optimization model for strategic storage biddi
 
 Run a simple simulation:
 
-```julia
-include("code/run.jl")
+```
+julia code/run.jl
 ```
 
 This will execute a bilevel optimization for a 4-day period with default parameters (20 GW storage capacity, 4-hour duration, wind scale 3x, solar scale 3x).
@@ -53,18 +53,19 @@ This will execute a bilevel optimization for a 4-day period with default paramet
 For running multiple periods, use the batch scripts:
 
 ```bash
-# Run a specific scenario
-sbatch batch/b20_hrs4_w3_s3_days4_ptc0.sh
+# Run on HPC
+cd batch
+sbatch b20_hrs4_w3_s3_days4_ptc10.sh
 
-# Or run directly with Julia
-julia code/run_all_tscc.jl b20_hrs4_w3_s3_days4_ptc0
+# Or run directly on a local PC
+julia code/run_all_tscc.jl b20_hrs4_w3_s3_days4_ptc10
 ```
 
 The run name format is: `b{storage_gw}_hrs{duration}_w{wind_scale}_s{solar_scale}_days{simulation_days}_ptc{production_incentive}`
 
 ### Custom Parameters
 
-Modify parameters in `code/run.jl` or `code/run_all_tscc.jl`:
+Modify parameters in `code/run_all_tscc.jl` or `code/run_all_pc.jl`:
 
 - `storage_cap_gw`: Storage capacity in GW
 - `storage_duration`: Storage duration in hours
