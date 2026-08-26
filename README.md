@@ -6,7 +6,7 @@ This project implements a bilevel optimization model for strategic storage biddi
 
 ## Key Features
 
-- **Bilevel Optimization**: Implements both convex and non-convex bilevel formulations for storage bidding
+- **Bilevel Optimization**: Implements convex bilevel formulation for storage bidding
 - **Economic Dispatch**: Solves lower-level market clearing with variable renewable energy (VRE) integration
 - **Storage Modeling**: Supports configurable storage capacity, duration, and efficiency parameters
 - **Scalable Scenarios**: Supports different VRE penetration levels, storage capacities, and other sensitivity factors
@@ -31,7 +31,7 @@ This project implements a bilevel optimization model for strategic storage biddi
 2. Install Julia dependencies:
    ```julia
    using Pkg
-   Pkg.add(["JuMP", "Gurobi", "BilevelJuMP", "DataFrames", "CSV", "Plots", "VegaLite", "Statistics", "PrettyTables", "FileIO"])
+   Pkg.add(["JuMP", "HiGHS", "Gurobi", "BilevelJuMP", "DataFrames", "CSV", "Plots", "VegaLite", "Statistics", "PrettyTables", "FileIO"])
    ```
 
 3. Set up Gurobi license (follow Gurobi installation instructions)
@@ -40,7 +40,7 @@ This project implements a bilevel optimization model for strategic storage biddi
 
 ### Basic Example
 
-Run a simple simulation:
+Run a simple single-period simulation:
 
 ```
 julia code/run.jl
@@ -50,22 +50,30 @@ This will execute a bilevel optimization for a 4-day period with default paramet
 
 ### Batch Processing
 
-For running multiple periods, use the batch scripts:
+For running multiple periods, use the batch scripts or directly run on a local PC:
 
 ```bash
-# Run on HPC
+# Run directly on a local PC
+julia code/run_all_periods.jl b20_hrs4_w3_s3_days4_ptc10
+
+# Run batch scripts on HPC
 cd batch
 sbatch b20_hrs4_w3_s3_days4_ptc10.sh
-
-# Or run directly on a local PC
-julia code/run_all_tscc.jl b20_hrs4_w3_s3_days4_ptc10
 ```
 
-The run name format is: `b{storage_gw}_hrs{duration}_w{wind_scale}_s{solar_scale}_days{simulation_days}_ptc{production_incentive}`
+The run name format is: `b{storage_gw}_hrs{duration}_w{wind_scale}_s{solar_scale}_days{simulation_days}_ptc{production_incentive}`. For example, the table below shows the key run names:
+
+| VRE share | Storage capacity | PTC ($/MW) | Run name |
+|---|---|---|---|
+| 40% | 20 GW | 0 | `b20_hrs4_w3_s3_days4_ptc0` |
+| 40% | 20 GW | 10 | `b20_hrs4_w3_s3_days4_ptc10` |
+| 80% | 20 GW | 0 | `b20_hrs4_w7_s7_days4_ptc0` |
+| 80% | 20 GW | 10 | `b20_hrs4_w7_s7_days4_ptc10` |
+| 40% | 40 GW | 10 | `b40_hrs4_w3_s3_days4_ptc10` |
 
 ### Custom Parameters
 
-Modify key parameters in `code/run_all_tscc.jl` for HPC runs or `code/run_all_pc.jl` for local runs:
+Modify key parameters in `code/run_all_periods.jl`:
 
 - `storage_cap_gw`: Storage capacity in GW
 - `storage_duration`: Storage duration in hours
@@ -80,11 +88,10 @@ Modify key parameters in `code/run_all_tscc.jl` for HPC runs or `code/run_all_pc
 
 ```
 ├── code/                       # Julia source code
-│   ├── bilevel_cvx.jl          # Convex bilevel formulation
-│   ├── ed.jl                   # Economic dispatch model
-│   └── run.jl                  # Single period run
-│   └── run_all_tscc.jl         # HPC run for multiple periods
-│   └── run_all_pc.jl           # Local run for multiple periods
+│   ├── bilevel_cvx.jl          # Strategic Storage: convex bilevel formulation
+│   ├── ed.jl                   # Central Control: economic dispatch model
+│   └── run.jl                  # Single-period run
+│   └── run_all_periods.jl      # Multi-period run
 ├── data/                       # Input datasets
 │   ├── data_WECC_small_mod/    # WECC system data
 │   ├── data_WECC_large/        # WECC system data (more detailed)

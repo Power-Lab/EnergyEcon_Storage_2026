@@ -12,15 +12,18 @@ using BilevelJuMP
 include("ed.jl")
 include("ed_bin.jl")
 include("bilevel_cvx.jl")
-include("bilevel_cvx_dr.jl")
 
 ENV["COLUMNS"]=120; # Set so all c?olumns of DataFrames and Matrices are displayed
 ENV["ROWS"]=30; # Set so all columns of DataFrames and Matrices are displayed
 
+# Read run name
+runname = ARGS[1]
+actfilename = split(runname, "_")
+
 # Define storage parameters
-storage_cap_mw = 20000
-storage_cap_gw = Int(storage_cap_mw / 1000)
-storage_duration = 4  # hrs
+storage_cap_gw = parse(Int64, actfilename[1][2:end])
+storage_cap_mw = Int(storage_cap_gw * 1000)
+storage_duration = parse(Int64, actfilename[2][4:end])
 one_way_efficiency = 0.95
 start_soc = 0
 
@@ -31,13 +34,13 @@ ra_min_soc = 0.25;
 
 # Set ramping charge parameters
 ramping_charge_scenario = false
-ramping_charge = 1.0 # $/MWh
+ramping_charge = 0.1 # $/MWh
 
 # Set VRE/firm parameters
-wind_cap_scale = 5
-solar_cap_scale = 5
+wind_cap_scale = parse(Int64, actfilename[3][2:end])
+solar_cap_scale = parse(Int64, actfilename[4][2:end])
 gas_cap_scale = 1
-bidding_ptc = 0  # $/MWh
+bidding_ptc = - parse(Int64, actfilename[6][4:end])  # $/MWh
 
 # Initialize dataframes
 df_to_save_iso = DataFrame()
@@ -47,30 +50,28 @@ params = DataFrame()
 summary = DataFrame()
 
 # Set simulation parameters
-simulation_days = 4
+simulation_days = parse(Int64, actfilename[5][5:end])
 run_iso = true
 run_bi = true
 run_bi_dr = false
-result_name = string("run-all-jl_test_", "all_weeks_", wind_cap_scale, "w_", solar_cap_scale, "s_" , 
-    storage_cap_gw, "b_", storage_duration, "hr_", bidding_ptc, "ptc_", simulation_days, "days")
+result_name = string("tscc_", "all_weeks_", wind_cap_scale, "w_", solar_cap_scale, "s_" , 
+    storage_cap_gw, "b_", storage_duration, "hrs_", bidding_ptc, "ptc_", simulation_days, "days")
 result_folder_name = joinpath(@__DIR__, "..", "result", result_name)
 result_gen_folder_name = joinpath(@__DIR__, "..", "result", result_name, "generation")
 figure_folder_name = joinpath(@__DIR__, "..", "result", result_name, "figure")
 mkpath(result_folder_name)
 mkpath(result_gen_folder_name)
-mkpath(figure_folder_name)
+mkpath(figure_folder_name)    
 
 # Select a subset of the data files based on period
-for period_number in 1:10
+for period_number in 1:90
     try
         period_number = period_number # weel 1, week 30/32
         T_period = 1:(24 * simulation_days)
         T_period_days = ((period_number - 1) * 24 * simulation_days + 1):(period_number * 24 * simulation_days)
 
         # Load and format data
-        datadir = joinpath(@__DIR__, "..", "data/data_WECC_very_small")
-        # datadir = joinpath(@__DIR__, "..", "data/data_WECC_small_mod")
-        # datadir = joinpath(@__DIR__, "..", "data/data_WECC_large")
+        datadir = joinpath(@__DIR__, "..", "data/data_WECC_small_mod")
         gen_info = CSV.read(joinpath(datadir,"Generators_data.csv"), DataFrame);
         fuels = CSV.read(joinpath(datadir,"Fuels_data.csv"), DataFrame);
         loads = CSV.read(joinpath(datadir,"Demand.csv"), DataFrame);
@@ -82,7 +83,6 @@ for period_number in 1:10
         end
 
         # Keep only the relevant columns
-        # select!(gen_info, 1:26, :stor) 
         gen_df = leftjoin(gen_info,  fuels, on = :fuel)
         rename!(gen_df, :cost_per_mmbtu => :fuel_cost)
         gen_df[ismissing.(gen_df[:,:fuel_cost]), :fuel_cost] .= 0;
@@ -143,8 +143,8 @@ for period_number in 1:10
         gen_df[gen_df.resource .== "onshore_wind_turbine", :existing_cap_mw] .= 
             gen_df[gen_df.resource .== "onshore_wind_turbine", :existing_cap_mw] .* wind_cap_scale
         gen_df[gen_df.resource .== "solar_photovoltaic", :existing_cap_mw] .= 
-            gen_df[gen_df.resource .== "solar_photovoltaic", :existing_cap_mw] .* solar_cap_scale     
-        
+            gen_df[gen_df.resource .== "solar_photovoltaic", :existing_cap_mw] .* solar_cap_scale
+
         # What if VRE bids into the market with PTC (negative prices)
         gen_df[in(["onshore_wind_turbine","solar_photovoltaic"]).(gen_df.resource), :var_om_cost_per_mwh] .= bidding_ptc
 
@@ -383,8 +383,56 @@ for period_number in 1:10
     # Save operational results
     CSV.write(joinpath(result_folder_name, "df_iso_all.csv"), df_to_save_iso, writeheader=true)
     CSV.write(joinpath(result_folder_name, "df_bi_all.csv"), df_to_save_bi, writeheader=true)
-    CSV.write(joinpath(result_folder_name, "df_bi_dr_all.csv"), df_to_save_bi_dr, writeheader=true)
     CSV.write(joinpath(result_folder_name, "params.csv"), params, writeheader=true)
     CSV.write(joinpath(result_folder_name, "summary.csv"), summary, writeheader=true)
+
+    # ============================================================
+    # Post-processing
+    # ============================================================
+    println("Post-processing: ", result_folder_name)
+
+    # (1) Remove the 'generation' folder
+    if isdir(result_gen_folder_name)
+        rm(result_gen_folder_name; recursive=true, force=true)
+        println("  - Deleted 'generation' folder")
+    end
+
+    # (2) & (3) Rename CSV files
+    renames = Dict(
+        "df_bi_all.csv" => "hourly_dispatch_strategic.csv",
+        "df_iso_all.csv" => "hourly_dispatch_central.csv"
+    )
+    for (old_name, new_name) in renames
+        old_file_path = joinpath(result_folder_name, old_name)
+        new_file_path = joinpath(result_folder_name, new_name)
+        if isfile(old_file_path)
+            mv(old_file_path, new_file_path; force=true)
+            println("  - Renamed $old_name to $new_name")
+        end
+    end
+
+    # (4) Update params_cap_mix.csv (resource names should already be updated upstream;
+    #     kept here for parity in case that changes)
+    params_cap_mix_path = joinpath(result_folder_name, "params_cap_mix.csv")
+    if isfile(params_cap_mix_path)
+        try
+            df_cap_mix = CSV.read(params_cap_mix_path, DataFrame)
+            if "resource" in names(df_cap_mix)
+                replace!(df_cap_mix.resource, "hydroelectric_pumped_storage" => "storage")
+                CSV.write(params_cap_mix_path, df_cap_mix, writeheader=true)
+                println("  - Updated resource names in params_cap_mix.csv")
+            end
+        catch e
+            println("  - Error processing CSV in $result_folder_name: $e")
+        end
+    end
+
+    # (5) Rename summary.csv to summary_weekly.csv
+    summary_old_path = joinpath(result_folder_name, "summary.csv")
+    summary_new_path = joinpath(result_folder_name, "summary_weekly.csv")
+    if isfile(summary_old_path)
+        mv(summary_old_path, summary_new_path; force=true)
+        println("  - Renamed summary.csv to summary_weekly.csv")
+    end
 
 end
