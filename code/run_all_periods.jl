@@ -53,7 +53,6 @@ summary = DataFrame()
 simulation_days = parse(Int64, actfilename[5][5:end])
 run_iso = true
 run_bi = true
-run_bi_dr = false
 result_name = string("tscc_", "all_weeks_", wind_cap_scale, "w_", solar_cap_scale, "s_" , 
     storage_cap_gw, "b_", storage_duration, "hrs_", bidding_ptc, "ptc_", simulation_days, "days")
 result_folder_name = joinpath(@__DIR__, "..", "result", result_name)
@@ -277,70 +276,6 @@ for period_number in 1:90
             CSV.write(joinpath(result_gen_folder_name, "bi_gen_$period_number.csv"), solution_sbed_cvx.solution_gen_df_ungrouped, writeheader=true)
         end
 
-        # Run MILP Bilevel with DR
-        if run_bi_dr
-            solution_sbed_cvx_dr = sbed_cvx_dr(gen_df, loads, gen_variable);
-
-            # Plot generation mix
-            pivoted_gen_df = unstack(solution_sbed_cvx_dr.solution_gen_df, :hour, :resource, :gen_sum)
-            f8 = solution_sbed_cvx_dr.solution_gen_df |>
-                @vlplot(:area,
-                width=1200, height=500,
-                x=:hour, y={:gen_sum, stack=:zero},
-                color={"resource:n", scale={scheme="category10"}})
-            f8 |> save(joinpath(result_folder_name, "bi_dr_gen_mix.pdf"))
-
-            # Plot storage cleared quantity
-            storage_df = solution_sbed_cvx_dr.storage_cleared
-            f9 = storage_df[(storage_df.resource .== "PHS_charge") .| (storage_df.resource .== "PHS_discharge"), :] |>
-            @vlplot(:bar,
-                width=600, height=300,
-                x=:hour, y={field=:gen_sum, title="Power Ratio (% of Max Power)"},
-                color={"resource:n", scale={scheme="category10"}})
-            f9 |> save(joinpath(result_folder_name, "bi_dr_storage.pdf"))
-
-            f10 = solution_sbed_cvx_dr.price_df |>
-                @vlplot(:line,
-                width=600, height=300,
-                x=:hour, y={field=:price, title="Price (\$/MWh)"},)
-            f10 |> save(joinpath(result_folder_name, "bi_dr_price.pdf"))
-
-            # Plot storage soc
-            storage_df = solution_sbed_cvx_dr.storage_cleared
-            f11 = storage_df[storage_df.resource .== "PHS_SOC", :] |>
-            @vlplot(:line,
-                width=600, height=300,
-                x=:hour, y={field=:gen_sum, title="State of Energy (MWh)"},
-                color={"resource:n", scale={scheme="category10"}})
-            f11 |> save(joinpath(result_folder_name, "bi_dr_soc.pdf"))
-
-            # Save bi-level operational results
-            df_to_save = DataFrame(hour=Array(T_period_days))
-            df_to_save.hour_simulation = T_period
-            df_to_save.demand = loads.demand
-            df_to_save = hcat(df_to_save, select!(pivoted_gen_df, Not(:hour)))
-            rename!(df_to_save, [:PHS_charge => :charge_power, :PHS_discharge => :discharge_power])
-            df_to_save.net_demand = df_to_save.demand - df_to_save._onshore_wind_turbine - 
-                df_to_save._small_hydroelectric - df_to_save._solar_photovoltaic
-            df_to_save.power = df_to_save.discharge_power - df_to_save.charge_power
-            df_to_save.soc = solution_sbed_cvx_dr.storage_cleared[(solution_sbed_cvx_dr.storage_cleared.resource .== "PHS_SOC"), :].gen_sum
-            df_to_save.price = solution_sbed_cvx_dr.price_df.price
-            df_to_save.discharge_price_offer = solution_sbed_cvx_dr.price_df.discharge_price_offer
-            df_to_save.charge_price_offer = solution_sbed_cvx_dr.price_df.charge_price_offer
-            df_to_save.dr = solution_sbed_cvx_dr.dr_df.dr
-            append!(df_to_save_bi_dr, df_to_save)
-        end
-
-        # Save key metrics
-        params.result_vars = ["result_name", "simulation_days", "period_count", "storage_duration", 
-            "ra_scenario", "storage_cap_gw", "onshore_wind_gw", "solar_gw", "bidding_ptc"]
-        params.result_params = [result_name, simulation_days, period_number, storage_duration, 
-            ra_scenario, storage_cap_mw / 1000,
-            sum(gen_df[gen_df.resource .== "onshore_wind_turbine", :existing_cap_mw]) / 1000, 
-            sum(gen_df[gen_df.resource .== "solar_photovoltaic", :existing_cap_mw]) / 1000,
-            bidding_ptc
-            ]
-
         if run_iso
             summary_one_run = DataFrame()
             summary_one_run.period_number = [period_number]
@@ -365,16 +300,6 @@ for period_number in 1:90
             summary_one_run.average_price = [Statistics.mean(solution_sbed_cvx.price_df.price)]
             append!(summary, summary_one_run)
         end
-        if run_bi_dr
-            summary_one_run = DataFrame()
-            summary_one_run.period_number = [period_number]
-            summary_one_run.scenario_name = ["bi-level-dr"]
-            summary_one_run.system_cost = [solution_sbed_cvx_dr.system_cost]
-            summary_one_run.storage_profit = [solution_sbed_cvx_dr.storage_profit]
-            summary_one_run.ramping_charge_total = [0.0]
-            summary_one_run.average_price = [Statistics.mean(solution_sbed_cvx_dr.price_df.price)]
-            append!(summary, summary_one_run)
-        end
         
     catch
         println(string("Infeasible: ", "period", period_number))
@@ -386,53 +311,53 @@ for period_number in 1:90
     CSV.write(joinpath(result_folder_name, "params.csv"), params, writeheader=true)
     CSV.write(joinpath(result_folder_name, "summary.csv"), summary, writeheader=true)
 
-    # ============================================================
-    # Post-processing
-    # ============================================================
-    println("Post-processing: ", result_folder_name)
+end
 
-    # (1) Remove the 'generation' folder
-    if isdir(result_gen_folder_name)
-        rm(result_gen_folder_name; recursive=true, force=true)
-        println("  - Deleted 'generation' folder")
+# ============================================================
+# Post-processing
+# ============================================================
+println("Post-processing: ", result_folder_name)
+
+# (1) Remove the 'generation' folder
+if isdir(result_gen_folder_name)
+    rm(result_gen_folder_name; recursive=true, force=true)
+    println("  - Deleted 'generation' folder")
+end
+
+# (2) & (3) Rename CSV files
+renames = Dict(
+    "df_bi_all.csv" => "hourly_dispatch_strategic.csv",
+    "df_iso_all.csv" => "hourly_dispatch_central.csv"
+)
+for (old_name, new_name) in renames
+    old_file_path = joinpath(result_folder_name, old_name)
+    new_file_path = joinpath(result_folder_name, new_name)
+    if isfile(old_file_path)
+        mv(old_file_path, new_file_path; force=true)
+        println("  - Renamed $old_name to $new_name")
     end
+end
 
-    # (2) & (3) Rename CSV files
-    renames = Dict(
-        "df_bi_all.csv" => "hourly_dispatch_strategic.csv",
-        "df_iso_all.csv" => "hourly_dispatch_central.csv"
-    )
-    for (old_name, new_name) in renames
-        old_file_path = joinpath(result_folder_name, old_name)
-        new_file_path = joinpath(result_folder_name, new_name)
-        if isfile(old_file_path)
-            mv(old_file_path, new_file_path; force=true)
-            println("  - Renamed $old_name to $new_name")
+# (4) Update params_cap_mix.csv (resource names should already be updated upstream;
+#     kept here for parity in case that changes)
+params_cap_mix_path = joinpath(result_folder_name, "params_cap_mix.csv")
+if isfile(params_cap_mix_path)
+    try
+        df_cap_mix = CSV.read(params_cap_mix_path, DataFrame)
+        if "resource" in names(df_cap_mix)
+            replace!(df_cap_mix.resource, "hydroelectric_pumped_storage" => "storage")
+            CSV.write(params_cap_mix_path, df_cap_mix, writeheader=true)
+            println("  - Updated resource names in params_cap_mix.csv")
         end
+    catch e
+        println("  - Error processing CSV in $result_folder_name: $e")
     end
+end
 
-    # (4) Update params_cap_mix.csv (resource names should already be updated upstream;
-    #     kept here for parity in case that changes)
-    params_cap_mix_path = joinpath(result_folder_name, "params_cap_mix.csv")
-    if isfile(params_cap_mix_path)
-        try
-            df_cap_mix = CSV.read(params_cap_mix_path, DataFrame)
-            if "resource" in names(df_cap_mix)
-                replace!(df_cap_mix.resource, "hydroelectric_pumped_storage" => "storage")
-                CSV.write(params_cap_mix_path, df_cap_mix, writeheader=true)
-                println("  - Updated resource names in params_cap_mix.csv")
-            end
-        catch e
-            println("  - Error processing CSV in $result_folder_name: $e")
-        end
-    end
-
-    # (5) Rename summary.csv to summary_weekly.csv
-    summary_old_path = joinpath(result_folder_name, "summary.csv")
-    summary_new_path = joinpath(result_folder_name, "summary_weekly.csv")
-    if isfile(summary_old_path)
-        mv(summary_old_path, summary_new_path; force=true)
-        println("  - Renamed summary.csv to summary_weekly.csv")
-    end
-
+# (5) Rename summary.csv to summary_weekly.csv
+summary_old_path = joinpath(result_folder_name, "summary.csv")
+summary_new_path = joinpath(result_folder_name, "summary_weekly.csv")
+if isfile(summary_old_path)
+    mv(summary_old_path, summary_new_path; force=true)
+    println("  - Renamed summary.csv to summary_weekly.csv")
 end
