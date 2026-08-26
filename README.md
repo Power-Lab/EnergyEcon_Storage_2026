@@ -9,8 +9,8 @@ This project implements a bilevel optimization model for strategic storage biddi
 - **Bilevel Optimization**: Implements convex bilevel formulation for storage bidding
 - **Economic Dispatch**: Solves lower-level market clearing with variable renewable energy (VRE) integration
 - **Storage Modeling**: Supports configurable storage capacity, duration, and efficiency parameters
-- **Scalable Scenarios**: Supports different VRE penetration levels, storage capacities, and other sensitivity factors
-- **Batch Processing**: Includes scripts for running multiple scenarios on HPC clusters
+- **Scenario Setting**: Supports different VRE penetration levels, storage capacities, and other sensitivity factors
+- **Batch Processing**: Includes scripts for running multi-period simulations on HPC clusters
 
 ## Installation
 
@@ -61,7 +61,9 @@ cd batch
 sbatch b20_hrs4_w3_s3_days4_ptc10.sh
 ```
 
-The run name format is: `b{storage_gw}_hrs{duration}_w{wind_scale}_s{solar_scale}_days{simulation_days}_ptc{production_incentive}`. For example, the table below shows the key run names:
+The run name format is: `b{storage_gw}_hrs{duration}_w{wind_scale}_s{solar_scale}_days{simulation_days}_ptc{production_incentive}`. 
+
+For example, the table below shows the key run names:
 
 | VRE share | Storage capacity | PTC ($/MW) | Run name |
 |---|---|---|---|
