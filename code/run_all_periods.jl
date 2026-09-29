@@ -13,7 +13,7 @@ include("ed.jl")
 include("ed_bin.jl")
 include("bilevel_cvx.jl")
 
-ENV["COLUMNS"]=120; # Set so all c?olumns of DataFrames and Matrices are displayed
+ENV["COLUMNS"]=120; # Set so all columns of DataFrames and Matrices are displayed
 ENV["ROWS"]=30; # Set so all columns of DataFrames and Matrices are displayed
 
 # Read run name

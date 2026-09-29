@@ -12,9 +12,8 @@ using BilevelJuMP
 include("ed.jl")
 include("ed_bin.jl")
 include("bilevel_cvx.jl")
-include("bilevel_cvx_dr.jl")
 
-ENV["COLUMNS"]=120; # Set so all c?olumns of DataFrames and Matrices are displayed
+ENV["COLUMNS"]=120; # Set so all columns of DataFrames and Matrices are displayed
 ENV["ROWS"]=30; # Set so all columns of DataFrames and Matrices are displayed
 
 # Define storage parameters
@@ -224,55 +223,6 @@ for week_number in 2:2
     CSV.write(
         joinpath(result_folder_name, "df_bi.csv"), df_to_save, writeheader=true)
 
-    # Run MILP Bilevel with DR
-    solution_sbed_cvx_dr = sbed_cvx_dr(gen_df, loads, gen_variable);
-
-    # Plot generation mix
-    f8 = solution_sbed_cvx_dr.solution_gen_df |>
-        @vlplot(:area,
-        width=1200, height=500,
-        x=:hour, y={:gen_sum, stack=:zero},
-        color={"resource:n", scale={scheme="category10"}})
-    f8 |> save(joinpath(result_folder_name, "bi_dr_gen_mix.pdf"))
-
-    # Plot storage cleared quantity
-    storage_df = solution_sbed_cvx_dr.storage_cleared
-    f9 = storage_df[(storage_df.resource .== "PHS_charge") .| (storage_df.resource .== "PHS_discharge"), :] |>
-    @vlplot(:bar,
-        width=600, height=300,
-        x=:hour, y={field=:gen_sum, title="Power Ratio (% of Max Power)"},
-        color={"resource:n", scale={scheme="category10"}})
-    f9 |> save(joinpath(result_folder_name, "bi_dr_storage.pdf"))
-
-    f10 = solution_sbed_cvx_dr.price_df |>
-        @vlplot(:line,
-        width=600, height=300,
-        x=:hour, y={field=:price, title="Price (\$/MWh)"},)
-    f10 |> save(joinpath(result_folder_name, "bi_dr_price.pdf"))
-
-    # Plot storage soc
-    storage_df = solution_sbed_cvx_dr.storage_cleared
-    f11 = storage_df[storage_df.resource .== "PHS_SOC", :] |>
-    @vlplot(:line,
-        width=600, height=300,
-        x=:hour, y={field=:gen_sum, title="State of Energy (MWh)"},
-        color={"resource:n", scale={scheme="category10"}})
-    f11 |> save(joinpath(result_folder_name, "bi_dr_soc.pdf"))
-
-    # Save bi-level operational results
-    df_to_save = DataFrame(hour=Array(T_period))
-    df_to_save.charge_power = solution_sbed_cvx_dr.solution_gen_df[(solution_sbed_cvx_dr.solution_gen_df.resource .== "PHS_charge"), :].gen_sum
-    df_to_save.discharge_power = solution_sbed_cvx_dr.solution_gen_df[(solution_sbed_cvx_dr.solution_gen_df.resource .== "PHS_discharge"), :].gen_sum
-    df_to_save.power = df_to_save.discharge_power - df_to_save.charge_power
-    df_to_save.soc = solution_sbed_cvx_dr.storage_cleared[(solution_sbed_cvx_dr.storage_cleared.resource .== "PHS_SOC"), :].gen_sum
-    df_to_save.demand = loads.demand
-    df_to_save.price = solution_sbed_cvx_dr.price_df.price
-    df_to_save.discharge_price_offer = solution_sbed_cvx_dr.price_df.discharge_price_offer
-    df_to_save.charge_price_offer = solution_sbed_cvx_dr.price_df.charge_price_offer
-    df_to_save.dr = solution_sbed_cvx_dr.dr_df.dr
-    CSV.write(
-        joinpath(result_folder_name, "df_bi_dr.csv"), df_to_save, writeheader=true)
-
     # Save key metrics
     summary = DataFrame()
     summary.result_vars = ["result_name", "simulation_days", "week_number", "storage_duration", 
@@ -282,10 +232,10 @@ for week_number in 2:2
         sum(gen_df[gen_df.resource .== "onshore_wind_turbine", :existing_cap_mw]) / 1000, 
         sum(gen_df[gen_df.resource .== "solar_photovoltaic", :existing_cap_mw]) / 1000
         ]
-    summary.scenario_name = ["iso-control", "bi-level", "bi-level-dr", 0, 0, 0, 0, 0]
-    summary.system_cost = [solution_ed.system_cost, solution_sbed_cvx.system_cost, solution_sbed_cvx_dr.system_cost, 0, 0, 0, 0, 0]
-    summary.storage_profit = [solution_ed.storage_profit, solution_sbed_cvx.storage_profit, solution_sbed_cvx_dr.storage_profit, 0, 0, 0, 0, 0]
-    summary.average_price = [Statistics.mean(solution_ed.price_df.price), Statistics.mean(solution_sbed_cvx.price_df.price), Statistics.mean(solution_sbed_cvx_dr.price_df.price), 0, 0, 0, 0, 0]
+    summary.scenario_name = ["iso-control", "bi-level", "", "", "", "", "", ""]
+    summary.system_cost = [solution_ed.system_cost, solution_sbed_cvx.system_cost, "", "", "", "", "", ""]
+    summary.storage_profit = [solution_ed.storage_profit, solution_sbed_cvx.storage_profit, "", "", "", "", "", ""]
+    summary.average_price = [Statistics.mean(solution_ed.price_df.price), Statistics.mean(solution_sbed_cvx.price_df.price), "", "", "", "", "", ""]
     CSV.write(
         joinpath(result_folder_name, "summary.csv"), summary, writeheader=true)
 
