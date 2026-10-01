@@ -305,6 +305,16 @@ for period_number in 1:90
         println(string("Infeasible: ", "period", period_number))
     end
 
+    # Save key simulation parameters
+    params.result_vars = ["result_name", "simulation_days", "period_count", "storage_duration", 
+        "ra_scenario", "storage_cap_gw", "onshore_wind_gw", "solar_gw", "bidding_ptc"]
+    params.result_params = [result_name, simulation_days, period_number, storage_duration, 
+        ra_scenario, storage_cap_mw / 1000,
+        sum(gen_df[gen_df.resource .== "onshore_wind_turbine", :existing_cap_mw]) / 1000, 
+        sum(gen_df[gen_df.resource .== "solar_photovoltaic", :existing_cap_mw]) / 1000,
+        bidding_ptc
+        ]
+
     # Save operational results
     CSV.write(joinpath(result_folder_name, "df_iso_all.csv"), df_to_save_iso, writeheader=true)
     CSV.write(joinpath(result_folder_name, "df_bi_all.csv"), df_to_save_bi, writeheader=true)
