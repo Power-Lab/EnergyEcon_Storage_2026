@@ -337,11 +337,75 @@ end
 # ============================================================
 println("Post-processing: ", result_folder_name)
 
-# (1) Remove the 'generation' folder
-if isdir(result_gen_folder_name)
-    rm(result_gen_folder_name; recursive=true, force=true)
-    println("  - Deleted 'generation' folder")
+# (1) Compute true generation cost (excluding PTC) and write summary_system.csv
+println("Computing summary_system.csv: ", result_folder_name)
+
+datadir = joinpath(@__DIR__, "..", "data/data_WECC_small_mod")
+gen_cost = CSV.read(joinpath(datadir, "Generators_data.csv"), DataFrame)
+fuel_tbl = CSV.read(joinpath(datadir, "Fuels_data.csv"), DataFrame)
+rename!(gen_cost, lowercase.(names(gen_cost)))
+rename!(fuel_tbl, lowercase.(names(fuel_tbl)))
+gen_cost = leftjoin(gen_cost, fuel_tbl, on = :fuel)
+rename!(gen_cost, :cost_per_mmbtu => :fuel_cost)
+
+# Marginal cost: Var O&M alone if the generator burns no fuel, else
+# Var O&M + heat rate x fuel cost. Matches the Python logic exactly.
+mc(row) = row.fuel == "None" ? row.var_om_cost_per_mwh :
+          row.var_om_cost_per_mwh + row.heat_rate_mmbtu_per_mwh * row.fuel_cost
+mc_by_rid = Dict(row.r_id => mc(row) for row in eachrow(gen_cost))
+
+function true_cost(prefix)
+    total = 0.0
+    for period in 1:90
+        path = joinpath(result_gen_folder_name, "$(prefix)_gen_$period.csv")
+        isfile(path) || continue
+        d = CSV.read(path, DataFrame)
+        total += sum(d.gen .* get.(Ref(mc_by_rid), d.r_id, 0.0))
+    end
+    total
 end
+true_cost_bi  = run_bi  ? true_cost("bi")  : "N/A"
+true_cost_iso = run_iso ? true_cost("iso") : "N/A"
+
+safe_mean(x) = isempty(x) ? "N/A" : Statistics.mean(x)
+
+iso_rows = summary[summary.scenario_name .== "iso-control", :]
+bi_rows  = summary[summary.scenario_name .== "bi-level", :]
+neg_iso = filter(<(-1e-3), df_to_save_iso.price)
+neg_bi  = filter(<(-1e-3), df_to_save_bi.price)
+
+sys_cost_iso, sys_cost_bi = sum(iso_rows.system_cost), sum(bi_rows.system_cost)
+profit_iso, profit_bi = sum(iso_rows.storage_profit), sum(bi_rows.storage_profit)
+avg_price_iso, avg_price_bi = Statistics.mean(df_to_save_iso.price), Statistics.mean(df_to_save_bi.price)
+neg_count_iso, neg_count_bi = length(neg_iso), length(neg_bi)
+neg_mean_iso, neg_mean_bi = safe_mean(neg_iso), safe_mean(neg_bi)
+rc_total_bi = ramping_charge_scenario ? sum(bi_rows.ramping_charge_total) : "N/A"
+profit_after_rc_bi = ramping_charge_scenario ? profit_bi - rc_total_bi : "N/A"
+
+function vre_label(w, s)
+    lookup = Dict((1,1)=>"15%", (3,3)=>"40%", (5,5)=>"65%", (7,7)=>"80%")
+    get(lookup, (w, s)) do
+        @warn "No vre_share label for wind=$w, solar=$s -- add to lookup"
+        "N/A"
+    end
+end
+vre = vre_label(wind_cap_scale, solar_cap_scale)
+rc_display = ramping_charge_scenario ? ramping_charge : "N/A"
+
+metrics = ["folder_name","storage_cap","vre_share","ptc","storage_one_way_efficiency",
+           "ramping_charge","system_cost","storage_profit","average_price",
+           "system_cost_no_ptc_no_storage","neg_price_count","neg_price_mean",
+           "ramping_charge_total","storage_profit_after_ramping_charge"]
+bi_vals  = [result_name, storage_cap_gw, vre, -bidding_ptc, one_way_efficiency, rc_display,
+            sys_cost_bi, profit_bi, avg_price_bi, true_cost_bi, neg_count_bi, neg_mean_bi,
+            rc_total_bi, profit_after_rc_bi]
+iso_vals = [result_name, storage_cap_gw, vre, -bidding_ptc, one_way_efficiency, rc_display,
+            sys_cost_iso, profit_iso, avg_price_iso, true_cost_iso, neg_count_iso, neg_mean_iso,
+            "N/A", "N/A"]
+
+summary_system = DataFrame(Metric = metrics, var"bi-level" = bi_vals, var"iso-control" = iso_vals)
+CSV.write(joinpath(result_folder_name, "summary_system.csv"), summary_system, writeheader=true)
+println("  - Wrote summary_system.csv")
 
 # (2) & (3) Rename CSV files
 renames = Dict(

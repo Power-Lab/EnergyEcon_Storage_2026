@@ -11,15 +11,15 @@ This project implements a bilevel optimization model for strategic storage biddi
   - [Prerequisites](#prerequisites)
   - [Setup](#setup)
 - [Project Structure](#project-structure)
-- [Usage](#usage)
+- [Model Usage](#model-usage)
   - [Basic Example](#basic-example)
   - [Custom Parameters](#custom-parameters)
   - [Batch Processing](#batch-processing)
-  - [All Scenarios Used in This Paper](#all-scenarios-used-in-this-paper)
+  - [Overview of All Scenarios](#overview-of-all-scenarios)
 - [Analysis and Figure Reproduction](#analysis-and-figure-reproduction)
-  - [Generate result_summary.csv](#generate-result_summarycsv)
-  - [Running the Notebook](#running-the-notebook)
-  - [What's In Scope](#whats-in-scope)
+  - [Overview of Reproduction Steps](#overview-of-reproduction-steps)
+  - [Generate Summary Statistics](#generate-summary-statistics)
+  - [Run the Jupyter Notebook](#run-the-jupyter-notebook)
 - [Data Sources](#data-sources)
 - [License](#license)
 - [Maintainer](#maintainer)
@@ -69,17 +69,16 @@ This project implements a bilevel optimization model for strategic storage biddi
 │   ├── data_WECC_large/        # WECC system data (more detailed)
 ├── batch/                      # SLURM batch scripts
 ├── figure/                     # Placeholder for generated plots
-├── result/                     # Raw output, one folder per scenario (see "All
-│                               # Scenarios Used in This Paper" above)
+├── result/                     # Raw output, one folder per scenario
 ├── analysis/                   # Reproduces every table and figure in the paper
-│   ├── plot.ipynb              # Main reproduction notebook (see below)
-│   ├── result_summary.py       # Builds result_summary.csv from result_simplified/ (see below)
+│   ├── plot.ipynb              # Main reproduction notebook (in Python)
+│   ├── result_summary.py       # Builds result_summary.csv from result_simplified/ (in Python)
 │   ├── result_summary.csv      # Scenario-level summary metrics
-│   └── result_simplified/      # Per-scenario data used by plot.ipynb (see below)
+│   └── result_simplified/      # Per-scenario data used by plot.ipynb
 └── LICENSE                     # MIT License
 ```
 
-## Usage
+## Model Usage
 
 ### Basic Example
 
@@ -130,7 +129,7 @@ cd batch
 sbatch <run_name>.sh
 ```
 
-### All Scenarios Used in This Paper
+### Overview of All Scenarios
 
 The table below lists every model configuration used to produce the paper's results. Each row gives the run command and the resulting output folder under `result/`. Scenarios not directly cited in a specific table or figure are marked "Supplementary" — these were run as part of the broader sensitivity analysis but are not individually referenced in the published text.
 
@@ -204,24 +203,27 @@ The table below lists every model configuration used to produce the paper's resu
 | 80% | 10 | 1.0 | `julia code/run_all_periods.jl b20_hrs4_w7_s7_days4_ptc10_rc1` | `tscc_all_weeks_7w_7s_20b_4hrs_-10ptc_4days_rc1` | Figure 6 |
 | 80% | 10 | 2.0 | `julia code/run_all_periods.jl b20_hrs4_w7_s7_days4_ptc10_rc2` | `tscc_all_weeks_7w_7s_20b_4hrs_-10ptc_4days_rc2` | Figure 6 |
 
-**Total: 45 scenarios.**
-
 ## Analysis and Figure Reproduction
 
-`analysis/plot.ipynb` reproduces every table and figure in the paper in Python from two inputs,
-both read relative to the notebook's own location:
+### Overview of Reproduction Steps
 
-- **`result_summary.csv`** — one row per `(folder_name, scenario_name)`, with a
-  column for every scenario-level metric (system cost, storage profit,
-  negative-price statistics, etc.) used across all tables and figures.
-- **`result_simplified/`** — per-scenario data including `hourly_dispatch_{central,strategic}.csv` and per-period, per-generator dispatch `generation/{iso,bi}_gen_*.csv`.
+After obtaining model outputs across all scenarios, generate the summary
+statistics file `result_summary.csv` by running `analysis/result_summary.py`.
+A processed copy of `result_summary.csv` is already included in this
+repository, so this step is only needed if you want to regenerate it — see
+[Generate Summary Statistics](#generate-summary-statistics) below.
 
-### Generate result_summary.csv
+Then run `analysis/plot.ipynb` to reproduce every table and figure in the
+paper. The Jupyter notebook reads two inputs: the summary statistics file and the
+detailed per-scenario outputs — see
+[Run the Jupyter Notebook](#run-the-jupyter-notebook) below.
 
-`result_summary.csv` is derived from the full scenario set described above, via
-`analysis/result_summary.py`. The script locates every scenario folder's
-`summary_system.csv` under `result_simplified/`, reshapes each into one row
-per `(folder_name, scenario_name)`, and concatenates across all scenarios.
+### Generate Summary Statistics
+
+`result_summary.csv` is derived from the full model outputs by
+`analysis/result_summary.py`, which reshapes each scenario's metrics (system
+cost, storage profit, negative-price statistics, etc.) into one row and
+concatenates across all scenarios.
 
 To regenerate `result_summary.csv`:
 
@@ -230,31 +232,31 @@ cd analysis
 python result_summary.py --root result_simplified --out result_summary.csv
 ```
 
-### Running the Notebook
+### Run the Jupyter Notebook
+
+`analysis/plot.ipynb` reads two inputs, both relative to the notebook's own
+location:
+
+- **`result_summary.csv`** — one row per scenario, with the summary metrics
+  described above.
+- **`result_simplified/`** — per-scenario data, including
+  `hourly_dispatch_{central,strategic}.csv` and per-period, per-generator
+  dispatch `generation/{iso,bi}_gen_*.csv`.
 
 Install the remaining dependencies:
 
 ```bash
-pip install numpy pandas plotly
+pip install numpy pandas plotly notebook
 ```
 
-Then open `analysis/plot.ipynb` and run it top to bottom.
+Then open `analysis/plot.ipynb` and run it top to bottom. (If you're
+unfamiliar with Jupyter: run `jupyter notebook` from the `analysis/`
+directory, open `plot.ipynb` in the browser tab that appears, then use
+**Kernel → Restart & Run All**.)
 
-A pre-rendered export, `analysis/plot.html`, is also included — open it directly in
-a browser to view all generated tables and figures without running any code.
-
-### What's In Scope
-
-The notebook directly reproduces Table 1, Table 2, Table 4, and Table 5 (including
-its storage-capacity and storage-efficiency sensitivity components), as well as
-Figure 3, Figure 4, Figure 5, and Figure 6 (including its ramping-charge
-sensitivity component).
-
-Out of scope:
-- **Figures 1 and 2** — conceptual/framework diagrams, not derived from model
-  outputs.
-- **Table 3** — lists the parameter values used in the sensitivity analysis,
-  not derived from model outputs.
+A pre-rendered export, `analysis/plot.html`, is also included — open it
+directly in a browser to view all generated tables and figures without
+running any code.
 
 ## Data Sources
 
