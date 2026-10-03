@@ -1,0 +1,13 @@
+resource,existing_cap_mw
+biomass,593.212
+conventional_hydroelectric,46288.902
+conventional_steam_coal,25028.69
+geothermal,74.364
+storage,40000.0
+natural_gas_fired_combined_cycle,48554.019
+natural_gas_fired_combustion_turbine,19269.207
+natural_gas_steam_turbine,2661.1
+nuclear,7405.999
+onshore_wind_turbine,66593.69999999998
+small_hydroelectric,1221.308
+solar_photovoltaic,61457.7

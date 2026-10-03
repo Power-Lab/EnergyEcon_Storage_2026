@@ -1,0 +1,16 @@
+Metric,bi-level,iso-control
+folder_name,tscc_all_weeks_3w_3s_20b_4hrs_-10ptc_4days_eff98,tscc_all_weeks_3w_3s_20b_4hrs_-10ptc_4days_eff98
+storage_cap,20.0,20.0
+vre_share,40%,40%
+ptc,10.0,10.0
+storage_one_way_efficiency,0.98,0.98
+ramping_charge,0.0,0.0
+system_cost,2113938578.507677,2094969428.756803
+storage_profit,347341769.340037,164738103.0993994
+average_price,25.13107740198232,26.18723958698706
+system_cost_no_ptc_no_storage,5210362689.371388,5191393539.631669
+neg_price_count,53.0,9.0
+neg_price_mean,-8.029993584846762,-8.1213
+demand_weighted_price,25.1719949423311,26.34289467366111
+ramping_charge_total,0.0,0.0
+storage_profit_after_ramping_charge,347341769.340037,164738103.0993994

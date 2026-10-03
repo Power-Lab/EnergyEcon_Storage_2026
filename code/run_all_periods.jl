@@ -24,17 +24,23 @@ actfilename = split(runname, "_")
 storage_cap_gw = parse(Int64, actfilename[1][2:end])
 storage_cap_mw = Int(storage_cap_gw * 1000)
 storage_duration = parse(Int64, actfilename[2][4:end])
-one_way_efficiency = 0.95
 start_soc = 0
+
+# Set storage efficiency parameters (default: 95%)
+one_way_efficiency = occursin("eff85", runname) ? 0.85 :
+                      occursin("eff98", runname) ? 0.98 : 0.95
+
+# Set ramping charge parameters (default: OFF)
+ramping_charge = occursin("rc01", runname) ? 0.1 :
+                  occursin("rc05", runname) ? 0.5 :
+                  occursin("rc1", runname)  ? 1.0 :
+                  occursin("rc2", runname)  ? 2.0 : 0.0  # $/MWh
+ramping_charge_scenario = ramping_charge > 0.0
 
 # Define resource adequacy parameters
 ra_scenario = ["baseline", "min_soc", "penalty"][1]
 ra_penalty_cost = 20
-ra_min_soc = 0.25;
-
-# Set ramping charge parameters
-ramping_charge_scenario = false
-ramping_charge = 0.1 # $/MWh
+ra_min_soc = 0.25
 
 # Set VRE/firm parameters
 wind_cap_scale = parse(Int64, actfilename[3][2:end])
@@ -45,7 +51,6 @@ bidding_ptc = - parse(Int64, actfilename[6][4:end])  # $/MWh
 # Initialize dataframes
 df_to_save_iso = DataFrame()
 df_to_save_bi = DataFrame()
-df_to_save_bi_dr = DataFrame()
 params = DataFrame()
 summary = DataFrame()
 
@@ -53,8 +58,13 @@ summary = DataFrame()
 simulation_days = parse(Int64, actfilename[5][5:end])
 run_iso = true
 run_bi = true
+extra_tokens = actfilename[7:end]  # e.g. ["eff85"], ["rc01"], or [] if none present
 result_name = string("tscc_", "all_weeks_", wind_cap_scale, "w_", solar_cap_scale, "s_" , 
     storage_cap_gw, "b_", storage_duration, "hrs_", bidding_ptc, "ptc_", simulation_days, "days")
+if !isempty(extra_tokens)
+    result_name = result_name * "_" * join(extra_tokens, "_")
+end
+
 result_folder_name = joinpath(@__DIR__, "..", "result", result_name)
 result_gen_folder_name = joinpath(@__DIR__, "..", "result", result_name, "generation")
 figure_folder_name = joinpath(@__DIR__, "..", "result", result_name, "figure")

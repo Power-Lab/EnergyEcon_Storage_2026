@@ -1,0 +1,10 @@
+result_vars,result_params
+result_name,tscc_all_weeks_7w_7s_20b_4hrs_0ptc_4days_rc1
+simulation_days,4
+period_count,90
+storage_duration,4
+ra_scenario,baseline
+storage_cap_gw,20.0
+onshore_wind_gw,155.3853
+solar_gw,143.40130000000002
+bidding_ptc,0
