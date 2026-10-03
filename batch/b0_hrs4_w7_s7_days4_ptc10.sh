@@ -26,6 +26,6 @@ module load gurobi/10.0.1
 
 source /etc/profile.d/modules.sh
 
-julia ../code/run_all_tscc.jl $runname
+julia ../code/run_all_periods.jl $runname
 
 exit 0
