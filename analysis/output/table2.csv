@@ -1,0 +1,11 @@
+Renewable production incentive ($/MW),VRE share,Storage behavior scenario,Storage capacity (GW),System costs ($m),Storage profits ($m),Average prices ($/MW)
+0,40%,Central Control,20,5223.7,145.8,26.19
+0,40%,Strategic Storage,20,5240.1,315.1,25.19
+0,80%,Central Control,20,895.8,362.5,6.53
+0,80%,Strategic Storage,20,915.7,473.1,7.53
+10,40%,No Storage,0,5558.2,N/A,25.03
+10,40%,Central Control,20,5223.8,146.5,26.19
+10,40%,Strategic Storage,20,5240.1,318.9,25.16
+10,80%,No Storage,0,1465.6,N/A,4.08
+10,80%,Central Control,20,926.0,643.5,2.97
+10,80%,Strategic Storage,20,944.4,803.5,3.62

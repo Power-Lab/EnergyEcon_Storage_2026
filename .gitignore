@@ -1,5 +1,10 @@
 # Jupyter
 .ipynb_checkpoints/
+analysis/plot.html
+analysis/plot.ipynb
+
+# Python
+__pycache__/
 
 # macOS
 .DS_Store
