@@ -232,6 +232,13 @@ cd analysis
 python result_summary.py --root result_simplified --out result_summary.csv
 ```
 
+If you have run new scenarios (output folder is under `result/`), 
+run the following command to summarize new model outputs:
+
+```bash
+python result_summary.py --root ../result --out result_summary_new.csv
+```
+
 ### Run the Jupyter Notebook
 
 `analysis/plot.ipynb` reads two inputs, both relative to the notebook's own
