@@ -181,31 +181,31 @@ sbatch <run_name>.sh
 
 ### Overview of All Scenarios
 
-The table below lists every model configuration used to produce the paper's results. Each row gives the run command and the resulting output folder under `result/`. Scenarios not directly cited in a specific table or figure are marked "Supplementary" — these were run as part of the broader sensitivity analysis but are not individually referenced in the published text.
+The table below lists every model configuration used to produce the paper's results. Each row gives the run command and the resulting output folder under `result/`. The last column shows which tables and figures each scenario feeds: to reproduce a table or figure, run every scenario that lists it. Scenarios not used by any table or figure are marked "Supplementary" — these were run as part of the broader sensitivity analysis but are not individually referenced in the published text.
 
-#### Table 2 & Table 4 — VRE share × renewable incentive (20 GW, 95% efficiency, no ramping charge)
+#### Baseline scenarios — VRE share × renewable incentive (20 GW, 95% efficiency, no ramping charge)
 
 | VRE share | PTC (\$/MW) | Run command | Output folder | Paper reference |
 |---|---|---|---|---|
 | 15% | 0 | `julia code/run_all_periods.jl b20_hrs4_w1_s1_days4_ptc0` | `tscc_all_weeks_1w_1s_20b_4hrs_0ptc_4days` | Table 4 |
 | 15% | 5 | `julia code/run_all_periods.jl b20_hrs4_w1_s1_days4_ptc5` | `tscc_all_weeks_1w_1s_20b_4hrs_-5ptc_4days` | Table 4 |
 | 15% | 10 | `julia code/run_all_periods.jl b20_hrs4_w1_s1_days4_ptc10` | `tscc_all_weeks_1w_1s_20b_4hrs_-10ptc_4days` | Table 4 |
-| 40% | 0 | `julia code/run_all_periods.jl b20_hrs4_w3_s3_days4_ptc0` | `tscc_all_weeks_3w_3s_20b_4hrs_0ptc_4days` | Table 2, Table 4 |
+| 40% | 0 | `julia code/run_all_periods.jl b20_hrs4_w3_s3_days4_ptc0` | `tscc_all_weeks_3w_3s_20b_4hrs_0ptc_4days` | Table 2, Figure 5, Figure 6 |
 | 40% | 5 | `julia code/run_all_periods.jl b20_hrs4_w3_s3_days4_ptc5` | `tscc_all_weeks_3w_3s_20b_4hrs_-5ptc_4days` | Table 4 |
-| 40% | 10 | `julia code/run_all_periods.jl b20_hrs4_w3_s3_days4_ptc10` | `tscc_all_weeks_3w_3s_20b_4hrs_-10ptc_4days` | Table 2, Table 4 |
-| 65% | 0 | `julia code/run_all_periods.jl b20_hrs4_w5_s5_days4_ptc0` | `tscc_all_weeks_5w_5s_20b_4hrs_0ptc_4days` | Table 4 |
+| 40% | 10 | `julia code/run_all_periods.jl b20_hrs4_w3_s3_days4_ptc10` | `tscc_all_weeks_3w_3s_20b_4hrs_-10ptc_4days` | Table 2, Table 4, Figure 3, Figure 4, Figure 5, Figure 6 |
+| 65% | 0 | `julia code/run_all_periods.jl b20_hrs4_w5_s5_days4_ptc0` | `tscc_all_weeks_5w_5s_20b_4hrs_0ptc_4days` | Supplementary |
 | 65% | 5 | `julia code/run_all_periods.jl b20_hrs4_w5_s5_days4_ptc5` | `tscc_all_weeks_5w_5s_20b_4hrs_-5ptc_4days` | Table 4 |
 | 65% | 10 | `julia code/run_all_periods.jl b20_hrs4_w5_s5_days4_ptc10` | `tscc_all_weeks_5w_5s_20b_4hrs_-10ptc_4days` | Table 4 |
-| 80% | 0 | `julia code/run_all_periods.jl b20_hrs4_w7_s7_days4_ptc0` | `tscc_all_weeks_7w_7s_20b_4hrs_0ptc_4days` | Table 2, Table 4 |
+| 80% | 0 | `julia code/run_all_periods.jl b20_hrs4_w7_s7_days4_ptc0` | `tscc_all_weeks_7w_7s_20b_4hrs_0ptc_4days` | Table 2, Table 4, Figure 5, Figure 6 |
 | 80% | 5 | `julia code/run_all_periods.jl b20_hrs4_w7_s7_days4_ptc5` | `tscc_all_weeks_7w_7s_20b_4hrs_-5ptc_4days` | Table 4 |
-| 80% | 10 | `julia code/run_all_periods.jl b20_hrs4_w7_s7_days4_ptc10` | `tscc_all_weeks_7w_7s_20b_4hrs_-10ptc_4days` | Table 2, Table 4 |
+| 80% | 10 | `julia code/run_all_periods.jl b20_hrs4_w7_s7_days4_ptc10` | `tscc_all_weeks_7w_7s_20b_4hrs_-10ptc_4days` | Table 2, Table 4, Figure 3, Figure 5, Figure 6 |
 
-#### Table 2 — No Storage benchmark (0 GW)
+#### No Storage benchmark (0 GW)
 
 | VRE share | PTC (\$/MW) | Run command | Output folder | Paper reference |
 |---|---|---|---|---|
-| 40% | 10 | `julia code/run_all_periods.jl b0_hrs4_w3_s3_days4_ptc10` | `tscc_all_weeks_3w_3s_0b_4hrs_-10ptc_4days` | Table 2 |
-| 80% | 10 | `julia code/run_all_periods.jl b0_hrs4_w7_s7_days4_ptc10` | `tscc_all_weeks_7w_7s_0b_4hrs_-10ptc_4days` | Table 2 |
+| 40% | 10 | `julia code/run_all_periods.jl b0_hrs4_w3_s3_days4_ptc10` | `tscc_all_weeks_3w_3s_0b_4hrs_-10ptc_4days` | Table 2, Figure 3 |
+| 80% | 10 | `julia code/run_all_periods.jl b0_hrs4_w7_s7_days4_ptc10` | `tscc_all_weeks_7w_7s_0b_4hrs_-10ptc_4days` | Table 2, Figure 3 |
 
 #### Table 5 — Storage capacity sensitivity (40 GW, 95% efficiency, no ramping charge)
 
@@ -270,7 +270,7 @@ The scripts in `analysis/` reproduce the tables and figures of the paper in two 
 1. **Generate summary statistics** — `result_summary.py` condenses the model outputs of all scenarios into one file, `result_summary.csv`.
 2. **Generate tables and figures** — one `plot_table*.py` / `plot_figure*.py` script per table or figure reads the summary file and/or the detailed per-scenario outputs.
 
-By default the scripts read the processed model outputs included in this repository (`analysis/result_summary.csv` and `analysis/result_simplified/`), so no model run is needed to reproduce the paper's results. A processed copy of `result_summary.csv` is already included, so Step 1 is only needed if you want to regenerate it (for example after running new scenarios). 
+By default the scripts read the processed model outputs included in this repository (`analysis/result_summary.csv` and `analysis/result_simplified/`), so no model run is needed to reproduce the paper's results. A processed copy of `result_summary.csv` is already included, so Step 1 is only needed if you want to regenerate it (for example after running new scenarios).
 
 Make sure the [Python dependencies](#python-analysis) are installed. Every script writes the result to `analysis/output/`. All commands below are run from the `analysis/` directory:
 
@@ -311,7 +311,7 @@ Run each script below. Together, they reproduce every table and figure in scope.
 
 ## Data Sources
 
-The project uses WECC (Western Electricity Coordinating Council) system data. Data includes:
+The project uses WECC (Western Electricity Coordinating Council) system data from [PowerGenome](https://github.com/PowerGenome/PowerGenome), an open-source tool for building input files for power system models. Data includes:
 - Generator parameters and costs
 - Load profiles
 - Variable renewable energy capacity factors
